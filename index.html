@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polymarket Smart Money Dashboard</title>
+    <meta name="description" content="Track top Polymarket traders, their positions, and follow smart money signals in real-time.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app">
+        <!-- Header -->
+        <header id="header">
+            <div class="header-left">
+                <div class="logo">
+                    <span class="logo-icon">◆</span>
+                    <h1>Smart Money</h1>
+                </div>
+                <span class="badge badge-live" id="statusBadge">● LIVE</span>
+            </div>
+            <div class="header-stats">
+                <div class="stat-pill">
+                    <span class="stat-label">Tracking</span>
+                    <span class="stat-value" id="trackingCount">20</span>
+                </div>
+                <div class="stat-pill">
+                    <span class="stat-label">Combined Profit</span>
+                    <span class="stat-value profit" id="totalProfit">$0</span>
+                </div>
+                <div class="stat-pill">
+                    <span class="stat-label">Updated</span>
+                    <span class="stat-value" id="lastUpdated">--:--</span>
+                </div>
+                <div class="stat-pill" id="refreshPill" onclick="toggleAutoRefresh()" title="Click to pause/resume auto-refresh" style="cursor:pointer">
+                    <span class="stat-label" id="refreshLabel">Next refresh</span>
+                    <span class="stat-value" id="refreshCountdown">5:00</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Tab Navigation -->
+        <nav class="tabs">
+            <button class="tab active" data-tab="leaderboard">
+                <span class="tab-icon">👑</span> Leaderboard
+            </button>
+            <button class="tab" data-tab="feed">
+                <span class="tab-icon">⚡</span> Live Feed <span class="tab-badge" id="whaleBadge"></span>
+            </button>
+            <button class="tab" data-tab="signals">
+                <span class="tab-icon">📡</span> Copy Signals
+            </button>
+            <button class="tab" data-tab="consensus">
+                <span class="tab-icon">🎯</span> Consensus
+            </button>
+            <button class="tab" data-tab="watchlist">
+                <span class="tab-icon">👁</span> Watchlist
+            </button>
+            <button class="tab" data-tab="papertrade">
+                <span class="tab-icon">📝</span> Paper Trade
+            </button>
+            <button class="tab" data-tab="smartwallets">
+                <span class="tab-icon">🔬</span> Smart Wallets
+            </button>
+        </nav>
+
+        <!-- Leaderboard Tab -->
+        <section class="tab-content active" id="tab-leaderboard">
+            <div class="section-header">
+                <div>
+                    <h2>Smart Money Leaderboard</h2>
+                    <p class="section-desc">Top Polymarket traders ranked by profit &amp; efficiency</p>
+                </div>
+                <button class="btn btn-sm" id="winRateBtn" onclick="computeWinRates()">📊 Compute Win Rates</button>
+            </div>
+            <div class="table-container">
+                <table class="leaderboard-table" id="leaderboardTable">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Trader</th>
+                            <th class="sortable" data-sort="profit">Profit ↕</th>
+                            <th class="sortable" data-sort="volume">Volume ↕</th>
+                            <th class="sortable" data-sort="efficiency">Efficiency ↕</th>
+                            <th>Win Rate</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboardBody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Live Feed Tab -->
+        <section class="tab-content" id="tab-feed">
+            <div class="section-header">
+                <div>
+                    <h2>Live Trades Feed</h2>
+                    <p class="section-desc">Real-time trades from top wallets</p>
+                </div>
+                <div class="feed-controls">
+                    <select id="feedFilter">
+                        <option value="all">All Wallets</option>
+                    </select>
+                    <button class="btn btn-sm" id="refreshFeed">↻ Refresh</button>
+                </div>
+            </div>
+            <div class="category-filters" id="feedCategoryFilters">
+                <button class="cat-btn active" data-cat="sports-esports">⚽️ Sports & Esports</button>
+                <button class="cat-btn" data-cat="all">🌐 All</button>
+                <button class="cat-btn" data-cat="politics">🏛️ Politics</button>
+                <button class="cat-btn" data-cat="crypto">₿ Crypto</button>
+                <button class="cat-btn" data-cat="other">📦 Other</button>
+            </div>
+            <div class="whale-alerts" id="whaleAlerts"></div>
+            <div class="feed-container" id="feedContainer">
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <p>Loading trades from smart money wallets...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Copy Signals Tab -->
+        <section class="tab-content" id="tab-signals">
+            <div class="section-header">
+                <div>
+                    <h2>📡 Copy-Trade Signals</h2>
+                    <p class="section-desc">Markets where multiple high-efficiency wallets agree — strongest signals for Sports &amp; Esports</p>
+                </div>
+                <button class="btn btn-sm" id="toggleEndedBtn" onclick="toggleEndedSignals()">🔽 Show Ended</button>
+            </div>
+            <div class="category-filters" id="signalCategoryFilters">
+                <button class="cat-btn" data-cat="sports-esports">⚽️ Sports & Esports</button>
+                <button class="cat-btn active" data-cat="all">🌐 All</button>
+                <button class="cat-btn" data-cat="politics">🏛️ Politics</button>
+                <button class="cat-btn" data-cat="crypto">₿ Crypto</button>
+            </div>
+            <div class="signals-grid" id="signalsGrid">
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <p>Calculating copy-trade signals...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Market Consensus Tab -->
+        <section class="tab-content" id="tab-consensus">
+            <div class="section-header">
+                <h2>Market Consensus</h2>
+                <p class="section-desc">Markets where multiple smart money wallets are active</p>
+            </div>
+            <div class="category-filters" id="consensusCategoryFilters">
+                <button class="cat-btn active" data-cat="sports-esports">⚽️ Sports & Esports</button>
+                <button class="cat-btn" data-cat="all">🌐 All</button>
+                <button class="cat-btn" data-cat="politics">🏛️ Politics</button>
+                <button class="cat-btn" data-cat="crypto">₿ Crypto</button>
+                <button class="cat-btn" data-cat="other">📦 Other</button>
+            </div>
+            <div class="consensus-grid" id="consensusGrid">
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <p>Analyzing smart money positions...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Watchlist Tab -->
+        <section class="tab-content" id="tab-watchlist">
+            <div class="section-header">
+                <h2>Custom Watchlist</h2>
+                <p class="section-desc">Add wallet addresses to track</p>
+            </div>
+            <div class="watchlist-add">
+                <input type="text" id="watchlistInput" placeholder="Enter wallet address (0x...)" class="input">
+                <button class="btn btn-primary" id="addWatchlistBtn">+ Add Wallet</button>
+            </div>
+            <div class="watchlist-items" id="watchlistItems">
+                <div class="empty-state">
+                    <span class="empty-icon">👁</span>
+                    <p>No custom wallets added yet.<br>Add a wallet address above to start tracking.</p>
+                </div>
+            </div>
+
+            <!-- Watchlist Consensus -->
+            <div id="watchlist-consensus-section" style="display:none;margin-top:28px;border-top:1px solid var(--border);padding-top:20px">
+                <h3 style="font-size:1rem;font-weight:700;margin:0 0 4px;color:var(--text)">🎯 Watchlist Consensus</h3>
+                <p class="section-desc" style="margin:0 0 12px">Markets where your tracked wallets are active — sorted by wallet count</p>
+                <div class="category-filters" id="watchlistCatFilters">
+                    <button class="cat-btn active" data-cat="all">🌐 All</button>
+                    <button class="cat-btn" data-cat="sports-esports">⚽️ Sports &amp; Esports</button>
+                    <button class="cat-btn" data-cat="politics">🏛️ Politics</button>
+                    <button class="cat-btn" data-cat="crypto">₿ Crypto</button>
+                    <button class="cat-btn" data-cat="other">📦 Other</button>
+                </div>
+                <div class="consensus-grid" id="watchlistConsensusGrid"></div>
+            </div>
+        </section>
+
+        <!-- Paper Trade Tab -->
+        <section class="tab-content" id="tab-papertrade">
+            <div class="section-header">
+                <div>
+                    <h2>📝 Paper Trading</h2>
+                    <p class="section-desc">Simulate copy-trading with virtual money. Backtest your strategy risk-free.</p>
+                </div>
+                <button class="btn btn-sm btn-danger" id="resetPaperTrade">⟳ Reset Account</button>
+            </div>
+
+            <!-- Portfolio Overview -->
+            <div class="paper-portfolio" id="paperPortfolio">
+                <div class="portfolio-card portfolio-balance">
+                    <span class="portfolio-label">Available Balance</span>
+                    <span class="portfolio-value" id="paperBalance">$10.00</span>
+                </div>
+                <div class="portfolio-card portfolio-equity">
+                    <span class="portfolio-label">Total Equity</span>
+                    <span class="portfolio-value" id="paperEquity">$10.00</span>
+                </div>
+                <div class="portfolio-card portfolio-pnl">
+                    <span class="portfolio-label">Total PNL</span>
+                    <span class="portfolio-value" id="paperPnl">$0.00</span>
+                    <span class="portfolio-pnl-pct" id="paperPnlPct">0.00%</span>
+                </div>
+                <div class="portfolio-card portfolio-trades">
+                    <span class="portfolio-label">Total Trades</span>
+                    <span class="portfolio-value" id="paperTradeCount">0</span>
+                </div>
+                <div class="portfolio-card portfolio-winrate">
+                    <span class="portfolio-label">Win Rate</span>
+                    <span class="portfolio-value" id="paperWinRate">--</span>
+                </div>
+            </div>
+
+            <!-- Open Positions -->
+            <div class="paper-section">
+                <h3 class="paper-section-title">Open Positions</h3>
+                <div class="paper-positions" id="paperPositions">
+                    <div class="empty-state">
+                        <span class="empty-icon">📊</span>
+                        <p>No open positions.<br>Use the markets below to place paper trades.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Available Markets to Trade -->
+            <div class="paper-section">
+                <h3 class="paper-section-title">Markets — Place Paper Trades</h3>
+                <div class="category-filters" id="paperCategoryFilters">
+                    <button class="cat-btn active" data-cat="sports-esports">⚽️ Sports & Esports</button>
+                    <button class="cat-btn" data-cat="all">🌐 All</button>
+                    <button class="cat-btn" data-cat="politics">🏛️ Politics</button>
+                    <button class="cat-btn" data-cat="crypto">₿ Crypto</button>
+                    <button class="cat-btn" data-cat="other">📦 Other</button>
+                </div>
+                <div class="paper-markets" id="paperMarkets">
+                    <div class="loading-state">
+                        <div class="spinner"></div>
+                        <p>Loading markets...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trade History -->
+            <div class="paper-section">
+                <h3 class="paper-section-title">Trade History</h3>
+                <div class="paper-history" id="paperHistory">
+                    <div class="empty-state">
+                        <span class="empty-icon">📜</span>
+                        <p>No trades yet. Start paper trading to build your history.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Smart Wallets Tab -->
+        <section class="tab-content" id="tab-smartwallets">
+            <div class="section-header">
+                <div>
+                    <h2>🔬 Smart Wallet Classifier</h2>
+                    <p class="section-desc">Classifies tracked wallets by win rate, consistency &amp; category specialization</p>
+                </div>
+                <button class="btn btn-sm" id="smartWalletBtn" onclick="computeSmartWallets()">🔍 Analyze Wallets</button>
+            </div>
+            <div class="smart-legend">
+                <span class="smart-legend-item" style="color:var(--profit)">🧠 SMART MONEY — WR ≥55%, 10+ markets, profitable</span>
+                <span class="smart-legend-item" style="color:#22d3ee">🎯 SPECIALIST — WR ≥60% in a category</span>
+                <span class="smart-legend-item" style="color:var(--gold)">🐋 HIGH VOLUME ONLY — big vol, low efficiency</span>
+                <span class="smart-legend-item" style="color:var(--text-muted)">❓ UNCLASSIFIED</span>
+            </div>
+            <div class="smart-wallet-grid" id="smartWalletGrid">
+                <div class="empty-state">
+                    <span class="empty-icon">🔬</span>
+                    <p>Click <strong>Analyze Wallets</strong> to classify all tracked wallets.<br>
+                    Takes ~2-3 minutes. Results cached until page reload.</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
